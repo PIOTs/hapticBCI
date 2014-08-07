@@ -1,0 +1,23 @@
+Commit 7/29/14 - Darrel R. Deo
+
+This version includes force sensing. The shared_data structure includes a handle to the force sensor object titled g_ForceSensor. 
+To acquire the forces or torques, write the following code:
+
+	double forceData[3];
+	int forceSensorData = sharedData.g_ForceSensor.AcquireFTData();
+	sharedData.g_ForceSensor.GetForceReading(forceData);
+	
+	measuredForce[0] = forceData[0]; 
+	measuredForce[1] = forceData[1]; 
+	measuredForce[2] = forceData[2]; 
+	
+where measuredForce[0] --> X force
+				   [1] --> Y force	
+				   [2] --> Z force
+				   
+
+				   
+To run the test harness for the force sensor, comment out the define for the main loop and uncomment the define for the
+Force Sensor Test Main Loop.
+
+The initialization of the force sensor takes place in the main function (file)

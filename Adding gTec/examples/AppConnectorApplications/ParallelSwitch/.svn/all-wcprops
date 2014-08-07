@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/2279/trunk/src/contrib/AppConnectorApplications/ParallelSwitch
+END
+ParallelSwitch.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/!svn/ver/2279/trunk/src/contrib/AppConnectorApplications/ParallelSwitch/ParallelSwitch.cpp
+END
+inpout32_source_and_bins.zip
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/!svn/ver/1751/trunk/src/contrib/AppConnectorApplications/ParallelSwitch/inpout32_source_and_bins.zip
+END
+inpout32.dll
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/!svn/ver/1751/trunk/src/contrib/AppConnectorApplications/ParallelSwitch/inpout32.dll
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/!svn/ver/2279/trunk/src/contrib/AppConnectorApplications/ParallelSwitch/Makefile
+END

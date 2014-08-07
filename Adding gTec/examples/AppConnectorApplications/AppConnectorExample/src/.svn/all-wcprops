@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/!svn/ver/2279/trunk/src/contrib/AppConnectorApplications/AppConnectorExample/src
+END
+TCPStream.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/!svn/ver/2279/trunk/src/contrib/AppConnectorApplications/AppConnectorExample/src/TCPStream.cpp
+END
+mainUI.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/!svn/ver/1751/trunk/src/contrib/AppConnectorApplications/AppConnectorExample/src/mainUI.cpp
+END
+main.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/!svn/ver/1751/trunk/src/contrib/AppConnectorApplications/AppConnectorExample/src/main.cpp
+END
+TCPStream.h
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/!svn/ver/2279/trunk/src/contrib/AppConnectorApplications/AppConnectorExample/src/TCPStream.h
+END
+mainUI.h
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/!svn/ver/1751/trunk/src/contrib/AppConnectorApplications/AppConnectorExample/src/mainUI.h
+END
