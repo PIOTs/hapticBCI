@@ -261,6 +261,7 @@ void respToKey(unsigned char key, int x, int y) {
 					initBCI();
                 } else if (p_sharedData->input == BCI) {
                     p_sharedData->input = PHANTOM;
+                    closeBCI();
                     initPhantom();
                 } else {
                     p_sharedData->input = AUTO;
@@ -342,7 +343,8 @@ void close(void) {
     while (!p_sharedData->simulationFinished) cSleepMs(100);
     
     // close all devices
-    if (p_sharedData->input == PHANTOM) closePhantom();
+    if (p_sharedData->input == BCI)          closeBCI();
+    else if (p_sharedData->input == PHANTOM) closePhantom();
     closeNeuroTouch();
     
 }

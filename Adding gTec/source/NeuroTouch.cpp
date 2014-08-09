@@ -88,24 +88,22 @@ void updateCursor(void) {
     
     if (p_sharedData->input == BCI) {
         
-        // query the g.MOBIlab+ state map (NEED TO DETERMINE WHICH LABELS CORRESPOND TO THE DATA I WANT)
-        if (p_sharedData->bci == GTEC) {
-            p_sharedData->cogRight = p_sharedData->state["__________"];
-            p_sharedData->cogLeft = p_sharedData->state["__________"];
-            p_sharedData->cogNeut = p_sharedData->state["__________"];
-        }
+        // query the g.MOBIlab+ state map for the X control signal, which maps to cursor velocity (NOTE: might need to scale this)
+        if (p_sharedData->bci == GTEC) p_sharedData->cursorVel = p_sharedData->state["Signal(0,0)"];
         
-        // query the Emotiv listener
         else if (p_sharedData->bci == EMOTIV) {
+            // query the Emotiv listener
             p_sharedData->listener.queryEmoState(p_sharedData->cogRight, p_sharedData->cogLeft, p_sharedData->cogNeut);
+            
+            // sum of cognitive powers (right, left, neutral) = "force" on cursor along X
+            double cursorForce = p_sharedData->cogRight - p_sharedData->cogLeft;
+            double cursorAcc = cursorForce / mCursor;
+            
+            // integrate (via Euler) acceleration to get new cursor velocity
+            p_sharedData->cursorVel = p_sharedData->cursorVelOneAgo + cursorAcc * dt;
         }
 		
-		// sum of cognitive powers (right, left, neutral) = "force" on cursor along X
-        double cursorForce = p_sharedData->cogRight - p_sharedData->cogLeft;
-        double cursorAcc = cursorForce / mCursor;
-        
-        // integrate (via Euler) acceleration to get new cursor velocity and position
-        p_sharedData->cursorVel = p_sharedData->cursorVelOneAgo + cursorAcc * dt;
+        // integrate (via Euler) velocity to get new cursor position
         p_sharedData->cursorPos = p_sharedData->cursorPosOneAgo + p_sharedData->cursorVel * dt;
         
     } else if (p_sharedData->input == PHANTOM) {

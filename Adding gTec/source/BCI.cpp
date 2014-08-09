@@ -28,14 +28,39 @@ void initBCI(void) {
 	p_sharedData->cursorVel = 0;
 	p_sharedData->cursorVelOneAgo = 0;
     
-    // if using g.MOBIlab+, open the sockets and streams
     if (p_sharedData->bci == GTEC) {
-        p_sharedData->sendSocket.open(SEND_SOCK);
-        p_sharedData->sendStream.open(p_sharedData->sendSocket);
-        p_sharedData->recSocket.open(REC_SOCK);
-        p_sharedData->recStream.open(p_sharedData->recSocket);
+        bool sending = false;
+        bool receiving = false;
+        
+        // if not already done, open the sockets and streams
+        if (!sendSocket.is_open()) p_sharedData->sendSocket.open(SEND_SOCK);
+        if (!sendStream.is_open()) p_sharedData->sendStream.open(p_sharedData->sendSocket);
+        if (!recSocket.is_open()) p_sharedData->recSocket.open(REC_SOCK);
+        if (!recStream.is_open()) p_sharedData->recStream.open(p_sharedData->recSocket);
+        
+        // check that the connection with g.MOBIlab+ is established
+        if (!sendStream.is_open()) {
+            sending = false;
+            printf("\nUNABLE TO SEND DATA...");
+        } else {
+            sending = true;
+            printf("\nSENDING DATA...");
+        }
+        if (!recStream.is_open()) {
+            receiving = false;
+            printf("\nUNABLE TO RECEIVE DATA...");
+        } else {
+            receiving = true;
+            printf("\nRECEIVING DATA...");
+        }
+        
+        // keep trying to initialize until the connection is established
+        while (!sending || !receiving) {
+            cSleepMs(2500);
+            initBCI();
+        }
     }
-
+    
 }
 
 // update state of BCI, either the Emotiv or g.MOBIlab+
@@ -47,7 +72,7 @@ void updateBCI(void) {
         socket.RunUntilSigInt();
     }
     
-    // reread from the g.MOBIlab+
+    // (re)read from the g.MOBIlab+
     else if (p_sharedData->bci == GTEC) readFromGTec(p_sharedData->state, p_sharedData->recStream);
 
 }
@@ -58,18 +83,33 @@ bool readFromGTec(map<string, float> &state, sockstream &recStream) {
     int count = 0;
     
     // read state data while available
-    while (recConnection.rdbuf()->in_avail()) {
+    while (recStream.rdbuf()->in_avail()) {
         string label;
         float value;
-        recConnection >> label >> value;
-        recConnection.ignore();
-        if (!recConnection) recConnection.ignore();
+        recStream >> label >> value;
+        recStream.ignore();
+        if (!recStream) recStream.clear();
         state[label] = value;
         count++;
     }
+    recStream.clear();
     
     // if we read and recorded data, return true
     if (count > 0) return true;
     else           return false;
+    
+}
+
+// if necessary, close the connection with g.MOBIlab+ (NOTE: because the Emotiv socket is only locally declared in the update function above (does not work to declare it in "shared_Data.h"), there is no way to break it)
+void closeBCI(void) {
+    
+    if (p_sharedData->bci == GTEC) {
+        p_sharedData->recStream.close();
+        p_sharedData->recStream.clear();
+        p_sharedData->recSocket.close();
+        p_sharedData->sendStream.close();
+        p_sharedData->sendStream.clear();
+        p_sharedData->sendStream.close();
+    }
     
 }
