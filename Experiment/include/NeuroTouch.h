@@ -5,7 +5,10 @@
 #include <conio.h>
 #include <cmath>
 #include "cNeuroTouch.h"
+#include "SockStream.h"
 #include "OSC_Listener.h"
+#include "cForceSensor.h"
+#include "cATIForceSensor.h"
 #include "shared_Data.h"
 
 void initNeuroTouch(void);

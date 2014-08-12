@@ -27,8 +27,10 @@ void setup(void) {
 	p_sharedData->cogRight = 0;
 	p_sharedData->cogLeft = 0;
 	p_sharedData->cogNeut = 0;
+    p_sharedData->controlSig = 0;
 	p_sharedData->opMode = DEMO;
 	p_sharedData->input = AUTO;
+    p_sharedData->bci = EMOTIV;
 	p_sharedData->controller = HAPTICS_OFF;
 	p_sharedData->autoFreq = 0.02;
     p_sharedData->cursorPos = 0;
@@ -37,6 +39,8 @@ void setup(void) {
     p_sharedData->cursorVelOneAgo = 0;
     p_sharedData->eeForceDesX = 0;
     p_sharedData->eeForceDesY = 0;
+    p_sharedData->sensing = false;
+    p_sharedData->force[3] = {0,0,0};
 	p_sharedData->targetSide = RIGHT;
 	p_sharedData->experimentState = START_UP;
     p_sharedData->blockNum = 0;
@@ -61,10 +65,17 @@ void setup(void) {
     // if not experiment, ask for input device (defaults to autonomous)
     else {
         printf("\nHow do you want to control?");
-        printf("\n(0) auto, (1) Emotiv, (2) PHANTOM\n");
+        printf("\n(0) auto, (1) BCI, (2) PHANTOM\n");
         cin >> response;
-        if (response == '1') p_sharedData->input = EMOTIV;
-        if (response == '2') p_sharedData->input = PHANTOM;
+        // if BCI control, ask for BCI (defaults to Emotiv headset)
+        if (response == '1') {
+            p_sharedData->input = BCI;
+            printf("\nWhich BCI are you using?");
+            printf("\n(0) Emotiv headset, (1) g.MOBIlab+ EEG cap\n");
+            cin >> response;
+            if (response == '1') p_sharedData->bci = GTEC;
+        }
+        else if (response == '2') p_sharedData->input = PHANTOM;
     }
     
 }
@@ -73,8 +84,7 @@ void setup(void) {
 void saveOneTimeStep(void) {
     
 	save_data temp;
-
-	
+    
     // record individual parameters
     temp.d_blockNum = p_sharedData->blockNum;
     temp.d_trialNum = p_sharedData->trialNum;
@@ -86,15 +96,14 @@ void saveOneTimeStep(void) {
     temp.d_cogRight = p_sharedData->cogRight;
     temp.d_cogLeft = p_sharedData->cogLeft;
     temp.d_cogNeut = p_sharedData->cogNeut;
+    temp.d_controlSig = p_sharedData->controlSig;
     temp.d_eeForceDesX = p_sharedData->eeForceDesX;
     temp.d_eeForceDesY = p_sharedData->eeForceDesY;
     temp.d_motorAPos = p_sharedData->motorAPos;
     temp.d_motorBPos = p_sharedData->motorBPos;
+    for (int i=0; i<3; i++) temp.d_force[i] = p_sharedData->force[i];
     
-
     // push into vector for current trial
-	//Darrel addition, had to comment because would cause a malicious exit condition
-
 	p_sharedData->trialData.push_back(temp);
     
 }
@@ -104,7 +113,7 @@ void recordTrial(void) {
     
     // iterate over vector, writing one time step at a time
     for (vector<save_data>::iterator it = p_sharedData->trialData.begin() ; it != p_sharedData->trialData.end(); ++it) {
-        fprintf(p_sharedData->outputFile,"%d %d %d %f %f %f %f %f %f %f %f %f %f %f\n",
+        fprintf(p_sharedData->outputFile,"%d %d %d %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",
                 it->d_blockNum,
                 it->d_trialNum,
                 it->d_trialSuccess,
@@ -115,10 +124,14 @@ void recordTrial(void) {
                 it->d_cogRight,
                 it->d_cogLeft,
                 it->d_cogNeut,
+                it->d_controlSig,
                 it->d_eeForceDesX,
                 it->d_eeForceDesY,
                 it->d_motorAPos,
-                it->d_motorBPos);
+                it->d_motorBPos,
+                it->d_force[0],
+                it->d_force[1],
+                it->d_force[2]);
     }
     
     // clear vector for next segment and signal that recording is done

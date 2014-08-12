@@ -146,7 +146,6 @@ static NIDAQcommands* DAQcommands = new NIDAQcommands();
 cNeuroTouch::cNeuroTouch(unsigned int a_deviceNumber)
 {
 	m_deviceID = a_deviceNumber;
-
 }
 
 //===========================================================================
@@ -194,8 +193,7 @@ cNeuroTouch::~cNeuroTouch()
  ****************************************************************************/
 int cNeuroTouch::open()
 {
-
-	#ifdef ACTIVATE_SS_DEVICE //defined in header file
+#ifdef ACTIVATE_SS_DEVICE //defined in header file
 	
 	#ifdef SENSORAY_ACTIVE
 		// load the .dll
@@ -270,10 +268,6 @@ int cNeuroTouch::open()
 	
 	#endif // SENSORAY_ACTIVE
 
-
-
-
-
 	#ifdef QUAD04_ACTIVE
 		// Configure quadrature encoder board
 		ULStat = cbC7266Config (QUAD04_board_num, Encoder_A, X4_QUAD, NORMAL_MODE, 
@@ -293,21 +287,9 @@ int cNeuroTouch::open()
 		ULStat = cbCLoad(QUAD04_board_num, PRESCALER1, 1);
 		ULStat = cbCLoad(QUAD04_board_num, PRESCALER2, 1);
 
-	#endif
-
-
-
-
-	#ifdef NIDAQ_ACTIVE
-		
-
-
-	#endif
+	#endif // QUAD04_ACTIVE
 	
-
-	
-
-#endif // End on ACTIVATE_SS_DEVICE
+#endif // ACTIVATE_SS_DEVICE
 
     return 0;
 }
@@ -354,6 +336,7 @@ int cNeuroTouch::close()
 		// close the DLL
 		S626_DLLClose();
 	#endif // SENSORAY_ACTIVE
+    
 #endif // ACTIVATE_SS_DEVICE
 	return 0;
 }
@@ -384,6 +367,7 @@ int cNeuroTouch::close()
 int cNeuroTouch::getPosition(float& a_position, float& b_position)
 {
 #ifdef ACTIVATE_SS_DEVICE
+    
 	#ifdef SENSORAY_ACTIVE
 		// Read in value from Encoder for Motor A and B
 		unsigned long EncoderRawA = S626_CounterReadLatch(0, CNTR_0A); // Motor A
@@ -422,9 +406,7 @@ int cNeuroTouch::getPosition(float& a_position, float& b_position)
 			printf("RAW A: %d   RAW B: %d\n",EncoderRawA, EncoderRawB);	
 			printf("Encoder PosA : %f      PosB: %f\n\n",a_position, b_position);
 		#endif
-	#endif	
-
-
+	#endif // SENSORAY_ACTIVE
 
 	#ifdef QUAD04_ACTIVE
 		// obtain the readings for encoder A and B
@@ -446,10 +428,7 @@ int cNeuroTouch::getPosition(float& a_position, float& b_position)
 		// set the return values
 		a_position = curposA_deg;
 		b_position = curposB_deg;
-
-
-	#endif
-
+	#endif // QUAD04_ACTIVE
 
 #else // If the NeuroTouch device is not defined
     a_position = 0;
@@ -486,8 +465,6 @@ int cNeuroTouch::getPosition(float& a_position, float& b_position)
 //===========================================================================
 int cNeuroTouch::setForce(const double& x_force, const double& y_force)
 {
-
-	// Darrel Addition
 #ifdef ACTIVATE_SS_DEVICE
 	
 		// define the voltage to be output on motorA and motorB
@@ -550,10 +527,9 @@ int cNeuroTouch::setForce(const double& x_force, const double& y_force)
 		// Write the analog out value to the NIDAQ
 		DAQcommands->writeAnalogOutput(MotorA_ChannelNum, AnalogA);
 		DAQcommands->writeAnalogOutput(MotorB_ChannelNum, AnalogB);
+	#endif // NIDAQ_ACTIVE
 
-
-	#endif
-#endif
+#endif // ACTIVATE_SS_DEVICE
 
 	//Debug Prints
 	#ifdef DEBUG_PRINTF
@@ -608,7 +584,8 @@ int cNeuroTouch::setForce(const double& x_force, const double& y_force)
  Author
  Darrel R. Deo
  ****************************************************************************/
-int cNeuroTouch::zeroEncoders(void){
+int cNeuroTouch::zeroEncoders(void)
+{
 #ifdef SENSORAY_ACTIVE
 	// obtain the current value of the encoders at this point and store them in the variable zeroEncoderParam
     unsigned long EncoderRaw = S626_CounterReadLatch(0, CNTR_0A);
@@ -645,7 +622,6 @@ int cNeuroTouch::zeroEncoders(void){
 #endif // SENSORAY_ACTIVE
 
 #ifdef QUAD04_ACTIVE
-		
 		//Re-Initialize the quadrature board to zero the encoders ( From Hopkins code ) 
 		LoadValue = 100000;
 		ULStat = cbCLoad32 (QUAD04_board_num, COUNT1, LoadValue);
@@ -654,14 +630,9 @@ int cNeuroTouch::zeroEncoders(void){
 		// Prescaler definitions
 		ULStat = cbCLoad(QUAD04_board_num, PRESCALER1, 1);
 		ULStat = cbCLoad(QUAD04_board_num, PRESCALER2, 1);
-
-		
-		
 #endif // QUAD04_ACTIVE
 
-
 	return 0;
-
 }
 
 
@@ -688,8 +659,8 @@ int cNeuroTouch::zeroEncoders(void){
  Author
  Darrel R. Deo
  ****************************************************************************/
-int cNeuroTouch::initADC(void){
-	
+int cNeuroTouch::initADC(void)
+{
 #ifdef SENSORAY_ACTIVE
 	S626_ResetADC(0, poll_list); // pass poll list to driver to initialize appropriately
 #endif
@@ -720,7 +691,8 @@ int cNeuroTouch::initADC(void){
  Author
  Darrel R. Deo
  ****************************************************************************/
-int cNeuroTouch::retrieveState(float& TorqueMA, float& TorqueMB, float& TorqueCA, float& TorqueCB, float& PositionMA, float& PositionMB, float& ForceEEx, float& ForceEEy, float& TimeStamp){
+int cNeuroTouch::retrieveState(float& TorqueMA, float& TorqueMB, float& TorqueCA, float& TorqueCB, float& PositionMA, float& PositionMB, float& ForceEEx, float& ForceEEy, float& TimeStamp)
+{
 	// obtain the current State
 	TorqueMA = Torque_MA;
 	TorqueMB = Torque_MB;
@@ -733,15 +705,14 @@ int cNeuroTouch::retrieveState(float& TorqueMA, float& TorqueMB, float& TorqueCA
 	TimeStamp = 0;
 
 	return 0;
-
 }
 
 
 
 
 /*************** TEST HARNESSES ********************************/
-int cNeuroTouch::testHarnessADC(void){
-	
+int cNeuroTouch::testHarnessADC(void)
+{
 #ifdef SENSORAY_ACTIVE
 	// Set a command voltage out
 	S626_WriteDAC(board, DAC1, (float)5 * DAC_VSCALAR); // Write 5V out to DAC1
@@ -755,12 +726,7 @@ int cNeuroTouch::testHarnessADC(void){
 		//printf("THE CURR REF Voltage input IS : %f\r\n", (float)val2);
 		Sleep(500);
 	}
-
 #endif // SENSORAY_ACTIVE
-
-
-
-
 
 #ifdef NIDAQ_ACTIVE
 	//command 5 volts to the reference input 
@@ -780,11 +746,6 @@ int cNeuroTouch::testHarnessADC(void){
 		//printf("Current Output for Channel B is          :             %f\r\n\n", (float)val*(2.2));
 		Sleep(1000);
 	}
-
-
-#endif
+#endif // NIDAQ_ACTIVE
+    
 }
-
-
-
-

@@ -24,9 +24,17 @@ using namespace std;
 #define EXPERIMENT 1
 // input mode
 #define AUTO    0  // cursor moves on its own
-#define EMOTIV  1
-#define PORT 7400  // port that "Mind your OSCs" broadcasts to
+#define BCI     1
 #define PHANTOM 2
+// brain-computer interfaces
+#define EMOTIV    0
+#define PORT      7400                  // port that "Mind your OSCs" broadcasts to
+#define GTEC      1
+#define SEND_SOCK "192.168.1.24:20321"  // "IP address:port" defining UDP socket sending state data from g.MOBIlab+
+#define REC_SOCK  "192.168.1.22:20320"  // "IP address:port" defining UDP socket receiving state data into BrainGate desktop
+// force sensing
+#define FS_CALIB "C:\CalibrationFiles\FT13574.cal"
+#define FS_INIT  "Dev1/ai0:5"
 // control paradigms
 #define HAPTICS_OFF     0
 #define POS_WITH_CURSOR 1
@@ -49,6 +57,9 @@ using namespace std;
 #define TARGET_SIZE 0.04  // target radius
 #define TARGET_DIST 0.18  // distance of target from center
 #define CURSOR_SIZE 0.02  // cursor radius
+// thread timing
+#define LOOP_TIME 0.001  // for regulating thread loop rates (sec)
+
 
 // data to save (NOTE: see below for any comments on meaning of variables)
 typedef struct {
@@ -63,17 +74,16 @@ typedef struct {
     double d_timeElapsed;
     
     // device states
-    float d_cogRight;
+    float d_cogRight;      // for Emotiv
     float d_cogLeft;
     float d_cogNeut;
+    float d_controlSig;    // for g.MOBIlab+ (NOTE: can only get one of these depending on BCI2000 task being run)
+    //float d_SelectStim;
     double d_eeForceDesX;
     double d_eeForceDesY;
     float d_motorAPos;
     float d_motorBPos;
-    
-    // ADD IN WITH FORCE SENSOR
-    //double force[3];
-    //double torque[3];
+    double d_force[3];     // only if sensing
     
 } save_data;
 
@@ -88,8 +98,6 @@ typedef struct {
     cHapticDeviceHandler* p_phantomHandler;  // handler for the PHANTOM
     cGenericHapticDevicePtr p_Phantom;       // pointer to PHANTOM device
     cNeuroTouch* p_NeuroTouch;               // pointer to NeuroTouch device
-
-
     
     // device frequency counters
     cFrequencyCounter phantomFreqCounter;     // counter to measure rate reading from PHANTOM device [Hz]
@@ -100,12 +108,14 @@ typedef struct {
     double phantomVel;
     
     // OSC processing
-    OSC_Listener listener;             // "hears" messages passed through "Mind your OSCs" port
+    OSC_Listener listener;  // "hears" messages passed through "Mind your OSCs" port
     
-    // Emotiv EPOC state
+    // BCI state (cognitive powers for Emotiv, map/control signal for g.MOBIlab+)
     float cogRight;
     float cogLeft;
     float cogNeut;
+    map<string, float> state;
+    float controlSig;  // just in X
     
     // NeuroTouch state
     float motorAPos;  // [deg] (NOTE: will need kinematics to convert to Cartesian ee positions (post-processing))
@@ -114,6 +124,7 @@ typedef struct {
     // control
     int opMode;
     int input;
+    int bci;
     int controller;			 // default for safety
 	cPrecisionClock* time;   // running time for autonomous cursor control
     double autoFreq;         // frequency of autonomous cursor movement [Hz] (variable with keyboard input)
@@ -123,6 +134,11 @@ typedef struct {
     double cursorVelOneAgo;
     double eeForceDesX;      // desired, not actual, end-effector force [N]
     double eeForceDesY;
+    
+    // sensing
+    bool sensing;
+    cForceSensor g_ForceSensor;
+    double force[3];
     
     // graphics
     int targetSide;
@@ -140,16 +156,10 @@ typedef struct {
     vector<save_data> trialData;  // for one trial of experiment
     FILE* outputFile;              // output file for entire experiment (all blocks/trials)
     
-	// Loop timer
+	// timers to regulate thread loop rates
 	cPrecisionClock m_phantomLoopTimer;
 	cPrecisionClock m_neurotouchLoopTimer;
-	cPrecisionClock m_emotiveLoopTimer;
-	cPrecisionClock m_expLoopTime;
 	cPrecisionClock m_expLoopTimer;
-
-
-	// create instance of force sensor
-	cForceSensor g_ForceSensor;
 
 } shared_data;
 

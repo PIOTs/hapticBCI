@@ -1,1 +1,0 @@
-This code only interfaces with the Sensoray board. It needs to be integrated with the code that Darrel wrote for the National Instruments DAQ and Measurement Computing PCI-QUAD04 boards. It also needs to be updated to handle force/torque sensing through the Nano17.

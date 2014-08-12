@@ -4,7 +4,7 @@ using namespace chai3d;
 using namespace std;
 
 
-static const int Tgraphics = 20;					// time between graphic updates [msec] = 50 Hz
+static const int Tgraphics = 20;  // minimum time between graphic updates [msec] = 50 Hz
 
 static int screenW;              // screen width (for relative window sizing/positioning)
 static int screenH;              // screen height
@@ -19,12 +19,11 @@ static cCamera* camera;           // camera to render the world
 static cDirectionalLight* light;  // light to illuminate the world
 static cShapeSphere* target;      // target for trial
 static cShapeSphere* cursor;      // position of cursor
-static cMaterial* targetMat;	  // material for coloring target
-static cMaterial* cursorMat;	  // material for coloring cursor
+static cMaterial targetMat;       // material for coloring target
+static cMaterial cursorMat;       // material for coloring cursor
 static cLabel* opMode;            // label to display simulation operating mode
 static cLabel* input;             // label to display input mode
 static cLabel* controller;        // label to display controller number
-static cLabel* emotivRate;        // label to display Emotiv EPOC rate
 static cLabel* phantomRate;       // label to display PHANTOM rate
 static cLabel* neurotouchRate;    // label to display NeuroTouch rate
 static cLabel* trial;             // label to display trial count
@@ -51,13 +50,13 @@ void initGraphics(int argc, char* argv[]) {
     glutInitWindowSize(windowW, windowH);
     glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE);
     glutCreateWindow(argv[0]);
-    glutSetWindowTitle("NeuroTouch");
+    glutSetWindowTitle("Skin Stretch for BCIs");
     if (fullscreen) glutFullScreen();
     
     // initialize GLEW library (must happen after window creation)
     glewInit();
     
-    // setup GLUT event handlers
+    // set up GLUT event handlers
     glutDisplayFunc(updateGraphics);
     glutKeyboardFunc(respToKey);
     glutReshapeFunc(resizeWindow);
@@ -80,19 +79,15 @@ void initGraphics(int argc, char* argv[]) {
     light->setEnabled(true);
     light->setDir(-1.0, 0.0, 0.0);
     
-    // create spheres to represent target and cursor
+    // create colored spheres to represent target and cursor
     target = new cShapeSphere(TARGET_SIZE);
+    targetMat.m_ambient.set(255,0,0,1.0);  // red (to start)
+    target->m_material = targetMat;
     cursor = new cShapeSphere(CURSOR_SIZE);
+    cursorMat.m_ambient.set(255,255,255,0.5);  // transparent white
+    cursor->m_material = cursorMat;
     world->addChild(target);
     world->addChild(cursor);
-
-	// add materials to target and cursor
-	targetMat = new cMaterial();
-	cursorMat = new cMaterial();
-	targetMat->setColorf(255,0,0,1.0);	    // red
-	cursorMat->setColorf(255,255,255,0.5);  // transparent white
-	target->setUseMaterial(targetMat);
-	cursor->setUseMaterial(cursorMat);
     
     // create labels
     cFont* font = NEW_CFONTCALIBRI20();
@@ -126,16 +121,19 @@ void updateGraphics(void) {
     // update target and cursor
     double targetPos = (p_sharedData->targetSide) * TARGET_DIST;
     target->setLocalPos(targetPos, 0, 0);
-    if (p_sharedData->trialSuccess) targetMat->setColorf(0,255,0,1.0);  // target turns green upon success
-    else                            targetMat->setColorf(255,0,0,1.0);
+    if (p_sharedData->trialSuccess) targetMat.m_ambient.set(0,255,0,1.0);  // target turns green upon success
+    else                            targetMat.m_ambient.set(255,0,0,1.0);
     cursor->setLocalPos(p_sharedData->cursorPos, 0, 0);
     
     // update labels
     if (p_sharedData->opMode == DEMO) opMode->setString("Mode: DEMO");
     else                              opMode->setString("Mode: EXPERIMENT");
-    if (p_sharedData->input == AUTO)        input->setString("Input: AUTO");
-    else if (p_sharedData->input == EMOTIV) input->setString("Input: EMOTIV");
-    else                                    input->setString("Input: PHANTOM");
+    if (p_sharedData->input == AUTO)   input->setString("Input: AUTO");
+    else if (p_sharedData->input == BCI) {
+        if (p_sharedData->bci == GTEC) input->setString("Input: G.MOBILAB+");
+        else                           input->setString("Input: EMOTIV");
+    }
+    else                               input->setString("Input: PHANTOM");
     controller->setString("Controller #" + to_string(static_cast<long long>(p_sharedData->controller)));
     phantomRate->setString("PHANTOM: " + to_string(static_cast<long long>(p_sharedData->phantomFreqCounter.getFrequency())));
     neurotouchRate->setString("NeuroTouch: " + to_string(static_cast<long long>(p_sharedData->neurotouchFreqCounter.getFrequency())));
@@ -234,12 +232,12 @@ void respToKey(unsigned char key, int x, int y) {
         case 'M':
             
             if (p_sharedData->opMode == DEMO) {
-                // can only use Emotiv for experiment
-                if (p_sharedData->input == EMOTIV) {
+                // can only use BCI for experiment
+                if (p_sharedData->input == BCI) {
                     p_sharedData->opMode = EXPERIMENT;
                     initExperiment();
                 } else {
-                    printf("\nPlease switch to Emotiv before starting experiment.\n");
+                    printf("\nPlease switch to BCI before starting experiment.\n");
                 }
             } else {
                 // any input goes for demo
@@ -253,20 +251,29 @@ void respToKey(unsigned char key, int x, int y) {
         case 'I':
             
             if (p_sharedData->opMode == DEMO) {
-                // auto -> Emotiv -> PHANTOM
+                // auto -> BCI -> PHANTOM
                 if (p_sharedData->input == AUTO) {
-                    p_sharedData->input = EMOTIV;
-					initEmotiv();
-                } else if (p_sharedData->input == EMOTIV) {
+                    p_sharedData->input = BCI;
+					initBCI();
+                } else if (p_sharedData->input == BCI) {
                     p_sharedData->input = PHANTOM;
+                    closeBCI();
                     initPhantom();
                 } else {
                     p_sharedData->input = AUTO;
                     closePhantom();
                 }
             } else {
-                printf("\nMust use Emotiv for experiment.\n");
+                printf("\nMust use BCI for experiment.\n");
             }
+            break;
+        
+        // s/S = force sensing toggle
+        case 's':
+        case 'S':
+            
+            if (!p_sharedData->sensing) p_sharedData->sensing = true;
+            else                        p_sharedData->sensing = false;
             break;
         
         // c/C = controller toggle
@@ -340,7 +347,8 @@ void close(void) {
     while (!p_sharedData->simulationFinished) cSleepMs(100);
     
     // close all devices
-    if (p_sharedData->input == PHANTOM) closePhantom();
+    if (p_sharedData->input == BCI)          closeBCI();
+    else if (p_sharedData->input == PHANTOM) closePhantom();
     closeNeuroTouch();
     
 }

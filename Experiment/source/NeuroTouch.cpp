@@ -4,6 +4,7 @@ using namespace std;
 
 
 static const double mCursor = 5000.0;   // mass of cursor (scales cognitive "force" on cursor)
+static const double gTecScalar = 1.0;   // to scale control signal output from BCI2000 module
 static const double dt = 0.02;          // time between graphic updates [sec]
 static const double phantomScalar = 2;  // to scale PHANTOM workspace to graphics workspace
 static const double A = 0.15;           // amplitude of autonomous cursor movement
@@ -23,15 +24,16 @@ void initNeuroTouch(void) {
     p_sharedData->p_NeuroTouch->setForce(0,0);
     
     // prompt user to "zero" device
-    printf("\nMove the NeuroTouch tactor to home, then press any key to continue.\n");
+    printf("\nMove the skin-stretch tactor to home, then press any key to continue.\n");
     while (true) {
         if (_kbhit()) break;
     }
     p_sharedData->p_NeuroTouch->zeroEncoders();
     
-
-	p_sharedData->m_neurotouchLoopTimer.setTimeoutPeriodSeconds(0.001);
+    // initialize device loop timer
+	p_sharedData->m_neurotouchLoopTimer.setTimeoutPeriodSeconds(LOOP_TIME);
 	p_sharedData->m_neurotouchLoopTimer.start();
+    
 }
 
 // point p_sharedData to sharedData, which is the data shared between all threads
@@ -50,22 +52,20 @@ void updateNeuroTouch(void) {
     // start simulation
     p_sharedData->simulationRunning = true;
     while(p_sharedData->simulationRunning) {
-
-		if (p_sharedData->m_neurotouchLoopTimer.timeoutOccurred())
-		{
+        
+        // only update state of device if timer has expired
+		if (p_sharedData->m_neurotouchLoopTimer.timeoutOccurred()) {
+            
 			p_sharedData->m_neurotouchLoopTimer.stop();
 
 			// update cursor and device states
 			updateCursor();
-
 			p_sharedData->p_NeuroTouch->getPosition(p_sharedData->motorAPos, p_sharedData->motorBPos);
         
 			// compute desired end-effector force and command this force to the device
 			computeForce();
-			
 			p_sharedData->p_NeuroTouch->setForce(p_sharedData->eeForceDesX, p_sharedData->eeForceDesY);
-
-
+        
 			// update frequency counter
 			p_sharedData->neurotouchFreqCounter.signal(1);
 
@@ -86,17 +86,27 @@ void updateCursor(void) {
     p_sharedData->cursorPosOneAgo = p_sharedData->cursorPos;
     p_sharedData->cursorVelOneAgo = p_sharedData->cursorVel;
     
-    if (p_sharedData->input == EMOTIV) {
+    if (p_sharedData->input == BCI) {
         
-        // query the Emotiv listener
-		p_sharedData->listener.queryEmoState(p_sharedData->cogRight, p_sharedData->cogLeft, p_sharedData->cogNeut);
+        if (p_sharedData->bci == EMOTIV) {
+            // query the Emotiv listener
+            p_sharedData->listener.queryEmoState(p_sharedData->cogRight, p_sharedData->cogLeft, p_sharedData->cogNeut);
+            
+            // sum of cognitive powers (right, left, neutral) = "force" on cursor along X
+            double cursorForce = p_sharedData->cogRight - p_sharedData->cogLeft;
+            double cursorAcc = cursorForce / mCursor;
+            
+            // integrate (via Euler) acceleration to get new cursor velocity
+            p_sharedData->cursorVel = p_sharedData->cursorVelOneAgo + cursorAcc * dt;
+        }
+        
+        // query the g.MOBIlab+ state map for the X control signal, which scales to cursor velocity
+        else if (p_sharedData->bci == GTEC) {
+            p_sharedData->controlSig = p_sharedData->state["Signal(0,0)"];
+            p_sharedData->cursorVel = gTecScalar * p_sharedData->controlSig;
+        }
 		
-		// sum of cognitive powers (right, left, neutral) = "force" on cursor along X
-        double cursorForce = p_sharedData->cogRight - p_sharedData->cogLeft;
-        double cursorAcc = cursorForce / mCursor;
-        
-        // integrate (via Euler) acceleration to get new cursor velocity and position
-        p_sharedData->cursorVel = p_sharedData->cursorVelOneAgo + cursorAcc * dt;
+        // integrate (via Euler) velocity to get new cursor position
         p_sharedData->cursorPos = p_sharedData->cursorPosOneAgo + p_sharedData->cursorVel * dt;
         
     } else if (p_sharedData->input == PHANTOM) {
@@ -124,7 +134,7 @@ void updateCursor(void) {
 	 
 }
 
-// compute desired force at end effector (NOTE: add Y-force when extending task to 2 dimensions)
+// compute desired force at end effector (NOTE: add Y-force when extending task to 2 dimensions) and (if sensing) measure finger force
 void computeForce(void) {
     
     switch (p_sharedData->controller) {
@@ -164,6 +174,12 @@ void computeForce(void) {
             p_sharedData->eeForceDesX = 0;
             p_sharedData->eeForceDesY = 0;
             break;
+    }
+    
+    // if sensing, measure XYZ finger force
+    if (sensing) {
+        int n = p_sharedData->g_ForceSensor.AcquireFTData();     // integer output indicates success/failure
+        p_sharedData->g_ForceSensor.GetForceReading(p_sharedData->force);
     }
     
 }

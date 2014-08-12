@@ -13,13 +13,12 @@ static const int targetSides[2] = {RIGHT, LEFT};  // only experiment parameter
 
 static int subjectNum;           // subject number
 static int control;              // subject's control paradigm of choice
+static int session;              // session number for subject
 static char filename[100];       // output filename
 static int nextExperimentState;  // so state machine knows where to go next
 
 static shared_data* p_sharedData;  // structure for sharing data between threads
 
-
-static float loopTime = 0.001;  // in seconds
 
 // point p_sharedData to sharedData, which is the data shared between all threads
 void linkSharedDataToExperiment(shared_data& sharedData) {
@@ -31,28 +30,28 @@ void linkSharedDataToExperiment(shared_data& sharedData) {
 // set-up for experiment
 void initExperiment(void) {
     
-    // get subject number and control paradigm
+    // get subject number, control paradigm, and session number
     printf("\nEnter subject number: ");
     cin >> subjectNum;
     printf("\nEnter control paradigm number: ");
     cin >> control;
+    printf("\nEnter session number: ");
+    cin >> session;
     printf("\n");
     
     // generate filename and open file for writing
-    sprintf(filename, "Subj_%dCtrl_%d.dat", subjectNum, control);
+    sprintf(filename, "Subj_%dCtrl_%dSession%d.dat", subjectNum, control, session);
     p_sharedData->outputFile = fopen(filename,"w");
-    fprintf(p_sharedData->outputFile, "Block, Trial, Success, TargetSide, CursorPos, CursorVel, TimeElapsed, CogRight, CogLeft, CogNeut, eeForceDesX, eeForceDesY, MotorAPos, MotorBPos\n");
+    fprintf(p_sharedData->outputFile, "Block, Trial, Success, TargetSide, CursorPos, CursorVel, TimeElapsed, CogRight, CogLeft, CogNeut, ControlSig, eeForceDesX, eeForceDesY, MotorAPos, MotorBPos, FingerForceX, FingerForceY, FingerForceZ\n");
     
     // enter start-up mode, with force feedback off for safety
+    p_sharedData->input = BCI;
     p_sharedData->controller = HAPTICS_OFF;
     p_sharedData->experimentState = START_UP;
-    p_sharedData->message = "Welcome to NeuroTouch.";
-
-	//Darrel Addition, need to change input type to EMOTIV otherwise it will run the DEMO graphics 
-	p_sharedData->input = EMOTIV;
-
-	// initialize loop timer
-	p_sharedData->m_expLoopTimer.setTimeoutPeriodSeconds(loopTime);
+    p_sharedData->message = "Welcome.";
+    
+	// initialize experiment loop timer
+	p_sharedData->m_expLoopTimer.setTimeoutPeriodSeconds(LOOP_TIME);
 	p_sharedData->m_expLoopTimer.start(true);
     
 }
@@ -62,10 +61,9 @@ void updateExperiment(void) {
    
     while (p_sharedData->simulationRunning) {
 
-		        
-	    if (p_sharedData->m_expLoopTimer.timeoutOccurred())
-		{
-			// Stop the loop timer
+        // only update experiment if timer has expired
+	    if (p_sharedData->m_expLoopTimer.timeoutOccurred()) {
+
 			p_sharedData->m_expLoopTimer.stop();
 
 			if (p_sharedData->opMode == EXPERIMENT) {
@@ -90,7 +88,6 @@ void updateExperiment(void) {
 								break;
 							}
 						}
-
 						break;
                     
 					case NO_HAPTICS_1:
@@ -104,7 +101,7 @@ void updateExperiment(void) {
                         
 							// give subject a break before 2nd block
 							nextExperimentState = HAPTICS_1;
-							p_sharedData->message = "Relax your mind.";
+							p_sharedData->message = "Relax your mind for 3 minutes.";
                         
 							// set/start timer (from zero)
 							p_sharedData->timer->setTimeoutPeriodSeconds(breakTime);
@@ -160,7 +157,7 @@ void updateExperiment(void) {
                         
 							// give subject a break before 3rd block
 							nextExperimentState = NO_HAPTICS_2;
-							p_sharedData->message = "Relax your mind.";
+							p_sharedData->message = "Relax your mind for 3 minutes.";
                         
 							// set/start timer (from zero)
 							p_sharedData->timer->setTimeoutPeriodSeconds(breakTime);
@@ -219,7 +216,7 @@ void updateExperiment(void) {
                         
 							// give subject a break before 4th block
 							nextExperimentState = HAPTICS_2;
-							p_sharedData->message = "Relax your mind.";
+							p_sharedData->message = "Relax your mind for 3 minutes.";
                         
 							// set/start timer (from zero)
 							p_sharedData->timer->setTimeoutPeriodSeconds(breakTime);
@@ -391,7 +388,8 @@ void updateExperiment(void) {
 						break;
 				}
 			}
-			p_sharedData->m_expLoopTimer.start(true); //restart the timer
+            
+			p_sharedData->m_expLoopTimer.start(true);
 		}
     }
      
