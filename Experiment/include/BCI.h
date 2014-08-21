@@ -18,6 +18,7 @@ void linkSharedDataToBCI(shared_data& sharedData);
 void initBCI(void);
 void updateBCI(void);
 bool readFromGTec(map<string, float> &state, sockstream &recStream);
+void writeToGTec(string state, short value);
 void closeBCI(void);
 
 #endif  // BCI_H

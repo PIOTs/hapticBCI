@@ -110,6 +110,12 @@ typedef struct {
     // OSC processing
     OSC_Listener listener;  // "hears" messages passed through "Mind your OSCs" port
     
+    // UDP sockets and TCP streams (for g.MOBIlab+)
+    receiving_udpsocket recSocket;
+    sockstream recStream;
+    sending_udpsocket sendSocket;
+    sockstream sendStream;
+    
     // BCI state (cognitive powers for Emotiv, map/control signal for g.MOBIlab+)
     float cogRight;
     float cogLeft;

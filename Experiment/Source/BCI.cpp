@@ -33,20 +33,20 @@ void initBCI(void) {
         bool receiving = false;
         
         // if not already done, open the sockets and streams
-        if (!sendSocket.is_open()) p_sharedData->sendSocket.open(SEND_SOCK);
-        if (!sendStream.is_open()) p_sharedData->sendStream.open(p_sharedData->sendSocket);
-        if (!recSocket.is_open()) p_sharedData->recSocket.open(REC_SOCK);
-        if (!recStream.is_open()) p_sharedData->recStream.open(p_sharedData->recSocket);
+        if (!p_sharedData->sendSocket.is_open()) p_sharedData->sendSocket.open(SEND_SOCK);
+        if (!p_sharedData->sendStream.is_open()) p_sharedData->sendStream.open(p_sharedData->sendSocket);
+        if (!p_sharedData->recSocket.is_open()) p_sharedData->recSocket.open(REC_SOCK);
+        if (!p_sharedData->recStream.is_open()) p_sharedData->recStream.open(p_sharedData->recSocket);
         
         // check that the connection with g.MOBIlab+ is established
-        if (!sendStream.is_open()) {
+        if (!p_sharedData->sendStream.is_open()) {
             sending = false;
             printf("\nUNABLE TO SEND DATA...");
         } else {
             sending = true;
             printf("\nSENDING DATA...");
         }
-        if (!recStream.is_open()) {
+        if (!p_sharedData->recStream.is_open()) {
             receiving = false;
             printf("\nUNABLE TO RECEIVE DATA...");
         } else {
@@ -97,6 +97,13 @@ bool readFromGTec(map<string, float> &state, sockstream &recStream) {
     // if we read and recorded data, return true
     if (count > 0) return true;
     else           return false;
+    
+}
+
+// overwrite a desired state of g.MOBIlab+
+void writeToGTec(string state, short value) {
+    
+    p_sharedData->sendStream << state << ' ' << value << endl;
     
 }
 

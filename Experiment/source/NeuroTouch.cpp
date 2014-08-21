@@ -178,7 +178,7 @@ void computeForce(void) {
     
     // if sensing, measure XYZ finger force
     if (sensing) {
-        int n = p_sharedData->g_ForceSensor.AcquireFTData();     // integer output indicates success/failure
+        int n = p_sharedData->g_ForceSensor.AcquireFTData();  // integer output indicates success/failure
         p_sharedData->g_ForceSensor.GetForceReading(p_sharedData->force);
     }
     
