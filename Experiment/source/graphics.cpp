@@ -81,11 +81,10 @@ void initGraphics(int argc, char* argv[]) {
     
     // create colored spheres to represent target and cursor
     target = new cShapeSphere(TARGET_SIZE);
-    targetMat.m_ambient.set(255,0,0,1.0);  // red (to start)
-    target->m_material = targetMat;
+    targetMat.m_ambient.set(255,0,0,1.0);  
+    target->m_material->setRedCrimson();	 // red (to start)
     cursor = new cShapeSphere(CURSOR_SIZE);
-    cursorMat.m_ambient.set(255,255,255,0.5);  // transparent white
-    cursor->m_material = cursorMat;
+	cursor->m_material->setWhite();			 // white
     world->addChild(target);
     world->addChild(cursor);
     
@@ -121,8 +120,8 @@ void updateGraphics(void) {
     // update target and cursor
     double targetPos = (p_sharedData->targetSide) * TARGET_DIST;
     target->setLocalPos(targetPos, 0, 0);
-    if (p_sharedData->trialSuccess) targetMat.m_ambient.set(0,255,0,1.0);  // target turns green upon success
-    else                            targetMat.m_ambient.set(255,0,0,1.0);
+    if (p_sharedData->trialSuccess) target->m_material->setGreenChartreuse();  // target turns bright green upon success
+    else                            target->m_material->setRedCrimson();
     cursor->setLocalPos(p_sharedData->cursorPos, 0, 0);
     
     // update labels

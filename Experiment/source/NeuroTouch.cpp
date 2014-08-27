@@ -119,7 +119,7 @@ void updateCursor(void) {
         
         // autonomous, sinusoidal input (i.e., cursor moves on its own)
         p_sharedData->cursorPos = A * sin(2.0 * pi * p_sharedData->autoFreq * p_sharedData->time->getCurrentTimeSeconds());
-        p_sharedData->cursorVel = (A * 2.0 * pi * p_sharedData->autoFreq)* cos(2.0 * pi * p_sharedData->autoFreq * p_sharedData->time->getCurrentTimeSeconds());
+        p_sharedData->cursorVel = (A * 2.0 * pi * p_sharedData->autoFreq) * cos(2.0 * pi * p_sharedData->autoFreq * p_sharedData->time->getCurrentTimeSeconds());
     }
 
 	// limit cursor movement if necessary
@@ -177,7 +177,7 @@ void computeForce(void) {
     }
     
     // if sensing, measure XYZ finger force
-    if (sensing) {
+    if (p_sharedData->sensing) {
         int n = p_sharedData->g_ForceSensor.AcquireFTData();  // integer output indicates success/failure
         p_sharedData->g_ForceSensor.GetForceReading(p_sharedData->force);
     }

@@ -9,6 +9,7 @@
 #include <fstream>
 #include "chai3d.h"
 #include "UdpSocket.h"
+#include "SockStream.h"
 #include "OSC_Listener.h"
 #include "cNeuroTouch.h"
 #include "NIDAQcommands.h"

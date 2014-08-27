@@ -7,7 +7,7 @@
 #include "chai3d.h"
 #include "../extras/freeglut/include/GL/glut.h"
 #include "Phantom.h"
-#include "Emotiv.h"
+#include "BCI.h"
 #include "NeuroTouch.h"
 #include "experiment.h"
 #include "shared_Data.h"

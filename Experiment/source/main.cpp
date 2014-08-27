@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) {
 	
     // start threads
 	neurotouchThread->start(updateNeuroTouch, CTHREAD_PRIORITY_HAPTICS);  // highest priority
-    bciThread->start(updateEmotiv, CTHREAD_PRIORITY_HAPTICS);
+    bciThread->start(updateBCI, CTHREAD_PRIORITY_HAPTICS);
     phantomThread->start(updatePhantom, CTHREAD_PRIORITY_GRAPHICS);
     experimentThread->start(updateExperiment, CTHREAD_PRIORITY_GRAPHICS);
     glutTimerFunc(50, graphicsTimer, 0);

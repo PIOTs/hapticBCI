@@ -40,7 +40,7 @@ void setup(void) {
     p_sharedData->eeForceDesX = 0;
     p_sharedData->eeForceDesY = 0;
     p_sharedData->sensing = false;
-    p_sharedData->force[3] = {0,0,0};
+    for (int i=0; i<3; i++) p_sharedData->force[i] = 0;
 	p_sharedData->targetSide = RIGHT;
 	p_sharedData->experimentState = START_UP;
     p_sharedData->blockNum = 0;
