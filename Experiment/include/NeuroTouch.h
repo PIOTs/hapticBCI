@@ -5,7 +5,7 @@
 #include <conio.h>
 #include <cmath>
 #include "cNeuroTouch.h"
-#include "SockStream.h"
+#include "BCI.h"
 #include "OSC_Listener.h"
 #include "cForceSensor.h"
 #include "cATIForceSensor.h"

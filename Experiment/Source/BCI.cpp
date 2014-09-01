@@ -33,25 +33,25 @@ void initBCI(void) {
         bool receiving = false;
         
         // if not already done, open the sockets and streams
-        if (!p_sharedData->sendSocket.is_open()) p_sharedData->sendSocket.open(SEND_SOCK);
-        if (!p_sharedData->sendStream.is_open()) p_sharedData->sendStream.open(p_sharedData->sendSocket);
         if (!p_sharedData->recSocket.is_open()) p_sharedData->recSocket.open(REC_SOCK);
         if (!p_sharedData->recStream.is_open()) p_sharedData->recStream.open(p_sharedData->recSocket);
+		if (!p_sharedData->sendSocket.is_open()) p_sharedData->sendSocket.open(SEND_SOCK);
+        if (!p_sharedData->sendStream.is_open()) p_sharedData->sendStream.open(p_sharedData->sendSocket);
         
         // check that the connection with g.MOBIlab+ is established
-        if (!p_sharedData->sendStream.is_open()) {
-            sending = false;
-            printf("\nUNABLE TO SEND DATA...");
-        } else {
-            sending = true;
-            printf("\nSENDING DATA...");
-        }
         if (!p_sharedData->recStream.is_open()) {
             receiving = false;
             printf("\nUNABLE TO RECEIVE DATA...");
         } else {
             receiving = true;
             printf("\nRECEIVING DATA...");
+        }
+        if (!p_sharedData->sendStream.is_open()) {
+            sending = false;
+            printf("\nUNABLE TO SEND DATA...\n");
+        } else {
+            sending = true;
+            printf("\nSENDING DATA...\n");
         }
         
         // keep trying to initialize until the connection is established
@@ -63,31 +63,29 @@ void initBCI(void) {
     
 }
 
-// update state of BCI, either the Emotiv or g.MOBIlab+
+// update state of BCI (NOTE: automatically done for the g.MOBIlab+ since sockets/streams already open)
 void updateBCI(void) {
     
-    // plug in the socket to start listening to the Emotiv
-    if (p_sharedData->bci == EMOTIV) {
-        UdpListeningReceiveSocket socket(IpEndpointName(IpEndpointName::ANY_ADDRESS, PORT), &(p_sharedData->listener));
-        socket.RunUntilSigInt();
-    }
-    
-    // (re)read from the g.MOBIlab+
-    else if (p_sharedData->bci == GTEC) readFromGTec(p_sharedData->state, p_sharedData->recStream);
+	// plug in the socket to start listening to the Emotiv
+	if (p_sharedData->bci == EMOTIV) {
+		UdpListeningReceiveSocket socket(IpEndpointName(IpEndpointName::ANY_ADDRESS, PORT), &(p_sharedData->listener));
+		socket.RunUntilSigInt();
+	}
 
 }
 
 // update map holding state of g.MOBIlab+
 bool readFromGTec(map<string, float> &state, sockstream &recStream) {
     
-    int count = 0;
+	int count = 0;
     
     // read state data while available
     while (recStream.rdbuf()->in_avail()) {
-        string label;
+		string label;
         float value;
         recStream >> label >> value;
-        recStream.ignore();
+		// ignore and clear ensure correct handling of toggle between RESUME & SUSPEND in BCI2000 app
+		recStream.ignore();
         if (!recStream) recStream.clear();
         state[label] = value;
         count++;
@@ -101,9 +99,9 @@ bool readFromGTec(map<string, float> &state, sockstream &recStream) {
 }
 
 // overwrite a desired state of g.MOBIlab+
-void writeToGTec(string state, short value) {
+void writeToGTec(string state, short value, sockstream &sendStream) {
     
-    p_sharedData->sendStream << state << ' ' << value << endl;
+    sendStream << state << ' ' << value << endl;
     
 }
 

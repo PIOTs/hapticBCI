@@ -31,8 +31,8 @@ using namespace std;
 #define EMOTIV    0
 #define PORT      7400                   // port that "Mind your OSCs" broadcasts to
 #define GTEC      1
-#define SEND_SOCK "192.168.1.235:20321"  // "IP address:port" defining UDP socket sending state data from g.MOBIlab+
 #define REC_SOCK  "192.168.1.195:20320"  // "IP address:port" defining UDP socket receiving state data into BrainGate desktop
+#define SEND_SOCK "192.168.1.235:20321"  // "IP address:port" defining UDP socket sending state data from g.MOBIlab+
 // force sensing
 #define FS_CALIB "C:\CalibrationFiles\FT13574.cal"
 #define FS_INIT  "Dev1/ai0:5"

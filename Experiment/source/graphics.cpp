@@ -19,8 +19,8 @@ static cCamera* camera;           // camera to render the world
 static cDirectionalLight* light;  // light to illuminate the world
 static cShapeSphere* target;      // target for trial
 static cShapeSphere* cursor;      // position of cursor
-static cMaterial targetMat;       // material for coloring target
-static cMaterial cursorMat;       // material for coloring cursor
+cMaterial targetMat;			  // material for coloring target
+cMaterial cursorMat;			  // material for coloring cursor
 static cLabel* opMode;            // label to display simulation operating mode
 static cLabel* input;             // label to display input mode
 static cLabel* controller;        // label to display controller number
@@ -349,5 +349,8 @@ void close(void) {
     if (p_sharedData->input == BCI)          closeBCI();
     else if (p_sharedData->input == PHANTOM) closePhantom();
     closeNeuroTouch();
+
+	// clean up memory
     
+
 }

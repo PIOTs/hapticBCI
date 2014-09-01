@@ -3,15 +3,15 @@
 using namespace std;
 
 
-static const double mCursor = 5000.0;   // mass of cursor (scales cognitive "force" on cursor)
-static const double gTecScalar = 1.0;   // to scale control signal output from BCI2000 module
-static const double dt = 0.02;          // time between graphic updates [sec]
-static const double phantomScalar = 2;  // to scale PHANTOM workspace to graphics workspace
-static const double A = 0.15;           // amplitude of autonomous cursor movement
-static const double pi = 3.14159;       // for conversion to radians/sec
-static const double maxPos = 0.2;		// to limit cursor movement
-static const double Kpos = 2.5;         // position-based control gain
-static const double Kvel = 1.5;         // velocity-based control gain
+static const double mCursor = 5000.0;    // mass of cursor (scales cognitive "force" on cursor)
+static const double gTecScalar = 0.0001; // to scale control signal output from BCI2000 module
+static const double dt = 0.02;           // time between graphic updates [sec]
+static const double phantomScalar = 2;   // to scale PHANTOM workspace to graphics workspace
+static const double A = 0.15;            // amplitude of autonomous cursor movement
+static const double pi = 3.14159;        // for conversion to radians/sec
+static const double maxPos = 0.2;		 // to limit cursor movement
+static const double Kpos = 2.5;          // position-based control gain
+static const double Kvel = 1.5;          // velocity-based control gain
 
 static shared_data* p_sharedData;  // structure for sharing data between threads
 
@@ -89,6 +89,7 @@ void updateCursor(void) {
     if (p_sharedData->input == BCI) {
         
         if (p_sharedData->bci == EMOTIV) {
+
             // query the Emotiv listener
             p_sharedData->listener.queryEmoState(p_sharedData->cogRight, p_sharedData->cogLeft, p_sharedData->cogNeut);
             
@@ -100,10 +101,15 @@ void updateCursor(void) {
             p_sharedData->cursorVel = p_sharedData->cursorVelOneAgo + cursorAcc * dt;
         }
         
-        // query the g.MOBIlab+ state map for the X control signal, which scales to cursor velocity
         else if (p_sharedData->bci == GTEC) {
-            p_sharedData->controlSig = p_sharedData->state["Signal(0,0)"];
+
+			// update g.MOBIlab+ state map (and simultaneously check for success)
+			if (!readFromGTec(p_sharedData->state, p_sharedData->recStream)) printf("\nUNABLE TO UPDATE STATE FROM BCI2000");
+
+			// query the map for the Y control signal (the one changing in BCI2000 CursorTask), which scales to X cursor velocity
+            p_sharedData->controlSig = p_sharedData->state["Signal(1,0)"];
             p_sharedData->cursorVel = gTecScalar * p_sharedData->controlSig;
+			printf("\nv = %f\n", p_sharedData->cursorVel);
         }
 		
         // integrate (via Euler) velocity to get new cursor position
